@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { motion } from "framer-motion";
-
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -24,6 +24,12 @@ const textRevealVariants = {
 };
 
 export default function Hero({isDarkMode, videoRef, portraitRotateX, portraitRotateY, portraitX, portraitY, welcomeScale, welcomeOpacity, setIsHoveringHero, canvasRef, handleMouseLeaveHero, handleCanvasMove}) {
+    const [hasScratched, setHasScratched] = useState(false);
+
+  const onInteraction = (e) => {
+    if (!hasScratched) setHasScratched(true);
+    handleCanvasMove(e);
+  };
     return (
       <section id="hero" className="relative w-full overflow-hidden flex flex-col justify-center items-center px-4 sm:px-8 md:px-20 min-h-[300px] md:min-h-[600px] max-h-[90vh] aspect-video transition-all duration-700" style={{ perspective: "1000px", aspectRatio: '16/9', maxHeight: '90vh' }}>
 
@@ -51,20 +57,51 @@ export default function Hero({isDarkMode, videoRef, portraitRotateX, portraitRot
         </motion.div>
         
         {/* Interaction Canvas */}
-        <canvas 
-          ref={canvasRef} 
-          onMouseEnter={() => setIsHoveringHero(true)} 
-          onMouseLeave={handleMouseLeaveHero} 
-          onMouseMove={handleCanvasMove} 
-          onTouchStart={() => setIsHoveringHero(true)}
-          onTouchEnd={handleMouseLeaveHero}
-          onTouchMove={e => {
-            if (!e.touches || e.touches.length === 0) return;
-            const touch = e.touches[0];
-            handleCanvasMove({ clientX: touch.clientX, clientY: touch.clientY });
-          }}
-          className="absolute inset-0 z-20 w-full h-full block" style={{ pointerEvents: 'auto', aspectRatio: '16/9', maxHeight: '90vh' }}
-        />
+<canvas
+        ref={canvasRef}
+        onMouseEnter={() => setIsHoveringHero(true)}
+        onMouseLeave={handleMouseLeaveHero}
+        onMouseMove={onInteraction}
+        onTouchStart={() => {
+          setIsHoveringHero(true);
+          setHasScratched(true);
+        }}
+        onTouchEnd={handleMouseLeaveHero}
+        onTouchMove={e => {
+          if (!e.touches || e.touches.length === 0) return;
+          const touch = e.touches[0];
+          onInteraction({ clientX: touch.clientX, clientY: touch.clientY });
+        }}
+        className="absolute inset-0 z-20 w-full h-full block"
+        style={{ pointerEvents: 'auto', aspectRatio: '16/9', maxHeight: '90vh' }}
+      />
+
+      {/* 3. BOTTOM RIGHT INTIMATION TEXT */}
+      <AnimatePresence>
+  {!hasScratched && (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ delay: 1.5 }}
+      // Responsive adjustments: 
+      // bottom-6 (mobile) -> bottom-10 (desktop)
+      // right-4 (mobile) -> right-10 (desktop)
+      // py-1 px-3 (smaller overall padding)
+      className="absolute bottom-6 right-4 sm:bottom-10 sm:right-10 z-50 flex items-center gap-2 bg-black/40 backdrop-blur-md py-1 px-3 sm:py-2 sm:px-4 rounded-full border border-white/10 shadow-2xl pointer-events-none"
+    >
+      <p className="text-[8px] sm:text-[10px] text-white/90 uppercase tracking-[0.15em] sm:tracking-[0.2em] font-bold">
+        Scratch here
+      </p>
+      
+      {/* Smaller pulsing indicator dot */}
+      <span className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2 bg-emerald-500"></span>
+      </span>
+    </motion.div>
+  )}
+</AnimatePresence>
 
 {/* Content Overlay */}
 <div className="relative z-30 w-full max-w-7xl mx-auto h-full flex flex-col justify-end pb-8 lg:pb-10 sm:pb-20 pointer-events-none">
